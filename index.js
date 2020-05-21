@@ -1,10 +1,11 @@
-var mysql = require("mysql");
+const mysql = require("mysql");
 const inquirer = require("inquirer");
+const cTable = require("console.table");
 
 // create the connection information for the sql database
 var connection = mysql.createConnection({
     host: "localhost",
-    port: 3000,
+    port: 3306,
     // Your username
     user: "root",
     // Your password
@@ -16,7 +17,6 @@ connection.connect(function(err) {
     if (err) throw err;
     // run the start function after the connection is made to prompt the user
     start();
-    connection.end();
 });
 /*
 view all employee by manager, department, roles
@@ -67,11 +67,40 @@ function start() {
 
 };
 
-//view all employees
+function getRoles(){
+    let query = "SELECT * FROM role";
+    var rolesArray = [];
+
+    connection.query(query, function(err,res){
+        for (var i = 0; i < res.length; i++) {
+            if (err) throw err;
+            rolesArray.push(res[i]);
+        }
+    });
+
+    return rolesArray;
+}
+
+
+//view all employees and their information
 function viewEmployee(){ 
-    start();
+    let query = "SELECT * FROM employee";
+
+    connection.query(query, function(err, res) {
+        if (err) throw err;
+        console.table(res);
+        
+        const rolesArray = getRoles()
+        console.log(rolesArray)
+    
+        start();
+    });
+
+    
+
 };
 
+//view all positions and their information within the company
 function viewEmployeeRoles(){
     inquirer
     .prompt([
@@ -104,50 +133,37 @@ function updateRoles(){
 
 function addEmployee(){
     //employee firstname, lastname, role, manager then run the start funciton again
+
+    const roles = getRoles();
     inquirer
     .prompt([
       {
         name: "employeeFirstName",
         type: "input",
         message: "enter employee first name ",
-        validate: function(value) {
-          if (isNaN(value) === false) {
-            return true;
-          }
-          return false;
-        }
       },
       {
         name: "employeeLastName",
         type: "input",
         message: "enter employee last name ",
-        validate: function(value) {
-          if (isNaN(value) === false) {
-            return true;
-          }
-          return false;
-        }
       },
       {
-      name: "employeeRole",
-      type: "input",
-      message: "enter employee's role'",
-      validate: function(value) {
-        if (isNaN(value) === false) {
-          return true;
-        }
-        return false;
-        }
+        name: "employeeRole",
+        type: "list",
+        message: "enter employee's role'",
+        choices : [...roles] //employee's role from database
       },
-      {
+        {
         name: "employeeManager",
         type: "list",
         message: "enter employee's manager ",
         choices : [] //manager's name from database
-      }
+        }
 
 
-    ])
+    ]).then(function(answer){
 
+    });
 
 };
+

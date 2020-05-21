@@ -8,22 +8,24 @@ CREATE database employeeDB;
 USE employeeDB;
 
 CREATE TABLE department (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(30) to hold department name
+  id INTEGER NOT NULL auto_increment PRIMARY KEY,
+  name VARCHAR(30)
 );
 
 CREATE TABLE role (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  title VARCHAR(30),
+  id INTEGER AUTO_INCREMENT NOT NULL PRIMARY KEY,
+  title VARCHAR(60),
   salary DECIMAL,
-  department_id INT 
+  department_id INTEGER
+  
 );
 
 CREATE TABLE employee (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  first_name VARCHAR(30) to hold employee first name,
-  last_name VARCHAR(30) to hold employee last name,
-  role_id INT to hold reference to role employee has,
-  manager_id INT
+  id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+  first_name VARCHAR(60) ,
+  last_name VARCHAR(60) ,
+  role_id INTEGER ,
+  manager_id INTEGER
+
     
 );
