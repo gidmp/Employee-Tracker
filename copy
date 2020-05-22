@@ -1,7 +1,6 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 const cTable = require("console.table");
-const Database = require("./async");
 
 // create the connection information for the sql database
 var connection = mysql.createConnection({
@@ -31,12 +30,10 @@ function start() {
         message: "What do you want to do?",
         choices: [
             "view all employees", 
-            "view all roles", 
-            "view all department",
+            "view all employees by roles", 
+            "view all employees by department",
             "update employee roles",
             "add employees",
-            "add roles",
-            "add department",
             "exit"
         ]}
     )
@@ -46,12 +43,12 @@ function start() {
           viewEmployee();
           break;
   
-        case "view all roles":
-          viewRoles();
+        case "view all employees by roles":
+          viewEmployeeRoles();
           break;
   
-        case "view all department":
-          viewDepartment();
+        case "view all employees by department":
+          viewEmployeeDepartment();
           break;
   
         case "update employee roles":
@@ -59,19 +56,9 @@ function start() {
           break;
 
         case "add employees":
-          addEmployee();
+          addEmployee(function(){start()});
           break;
 
-        case "add roles":
-          addRoles();
-          break;
-
-        case "add department":
-          addDepartment();
-          break;
-
-  
-  
         case "exit":
           connection.end();
           break;
@@ -80,22 +67,19 @@ function start() {
 
 };
 
-async function getRoles(){
-    let query = "SELECT title FROM role";
-    let roleList = [ ];
+function getRoles(cb){
+    let query = "SELECT * FROM role";
+    var roleList = [ ];
 
-    const data = await connection.query(query);
-    // for (var i = 0; i < data.length; i++) {
-    //     roleList.push(data[i].title);
-    // }
-    
-    // console.log(data.length);
-    for(const row of data) {
-        roleList.push(row.title);
-    }
+    connection.query(query, function(err,res){
+        if (err) throw err;
 
+        for (var i = 0; i < res.length; i++) {
+            roleList.push(res[i].title);
+        }
+        cb(roleList);
+    });
 
-    return roleList;
 }
 
 
@@ -104,9 +88,10 @@ function viewEmployee(){
     let query = "SELECT * FROM employee";
 
     connection.query(query, function(err, res) {
-      if (err) throw err;
-      console.table(res);
-      start();
+        if (err) throw err;
+        console.table(res);
+        
+        start();
     });
 
     
@@ -114,22 +99,29 @@ function viewEmployee(){
 };
 
 //view all positions and their information within the company
-function viewRoles(){
-  let query = "SELECT * FROM role";
-  connection.query(query, function(err, res) {
-    if (err) throw err;
-    console.table(res);
-    start();
-  });
+function viewEmployeeRoles(){
+    inquirer
+    .prompt([
+      {
+        name: "filterRole",
+        type: "list",
+        message: "pick the role you want to view ",
+        choices : [] //list all roles available from database
+      },
+    ])
 };
 
-function viewDepartment(){
-  let query = "SELECT * FROM department";
-  connection.query(query, function(err, res) {
-    if (err) throw err;
-    console.table(res);
-    start();
-  });
+function viewEmployeeDepartment(){
+    inquirer
+    .prompt([
+      {
+        name: "filterDepartment",
+        type: "list",
+        message: "pick the Department you want to view ",
+        choices : [] //list all Department available from database
+      },
+    ])
+
 
 };
 
@@ -149,46 +141,42 @@ function updateRoles(){
 
 };
 
-async function addEmployee(){
+function addEmployee(cb){
     //employee firstname, lastname, role, manager then run the start funciton again
 
-    const roles = await getRoles();
-    inquirer
-    .prompt([
-      {
-        name: "employeeFirstName",
-        type: "input",
-        message: "enter employee first name ",
-      },
-      {
-        name: "employeeLastName",
-        type: "input",
-        message: "enter employee last name ",
-      },
-      {
-        name: "employeeRole",
-        type: "list",
-        message: "enter employee's role'",
-        choices : [...roles] //employee's role from database
-      },
-        {
-        name: "employeeManager",
-        type: "list",
-        message: "enter employee's manager ",
-        choices : [] //manager's name from database
-        }
-
-
-    ]).then(function(answer){
+    getRoles(function(roles){
+        inquirer
+        .prompt([
+          {
+            name: "employeeFirstName",
+            type: "input",
+            message: "enter employee first name ",
+          },
+          {
+            name: "employeeLastName",
+            type: "input",
+            message: "enter employee last name ",
+          },
+          {
+            name: "employeeRole",
+            type: "list",
+            message: "enter employee's role'",
+            choices : [...roles] //employee's role from database
+          },
+            {
+            name: "employeeManager",
+            type: "list",
+            message: "enter employee's manager ",
+            choices : [] //manager's name from database
+            }
+    
+    
+        ]).then(function(answer){
+            
+        });
+    
 
     });
 
 };
 
-function addRoles(){
-
-};
-
-function addDepartment(){
-
-};
