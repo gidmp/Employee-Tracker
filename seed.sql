@@ -3,6 +3,7 @@
 USE employeeDB;
 
 INSERT into department (name) VALUES ("R&D");
+INSERT into department (name) VALUES ("Finance");
 
 INSERT into role (title, salary, department_id) VALUES ("Manager", 100000, 1);
 INSERT into role (title, salary, department_id) VALUES ("IT Manager", 120000, 2);

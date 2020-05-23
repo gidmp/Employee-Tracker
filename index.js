@@ -59,7 +59,7 @@ function start() {
           break;
 
         case "add employees":
-          addEmployee(function(){start()});
+          addEmployee();
           break;
 
         case "add roles":
@@ -69,8 +69,6 @@ function start() {
         case "add department":
           addDepartment();
           break;
-
-  
   
         case "exit":
           connection.end();
@@ -80,11 +78,9 @@ function start() {
 
 };
 
-
-
 //view all employees and their information
 function viewEmployee(){ 
-    let query = "SELECT employee.id, employee.first_name, employee.last_name FROM employee LEFT JOIN role on (role_id = role.department_id)";
+    let query = "SELECT e.id, e.first_name, e.last_name, role.title, department.name AS department, role.salary, concat(m.first_name, ' ' ,  m.last_name) AS manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id LEFT JOIN role ON e.role_id = role.id LEFT JOIN department ON role.department_id = department.id ORDER BY ID ASC";
 
     connection.query(query, function(err, res) {
       if (err) throw err;
@@ -114,14 +110,15 @@ function viewDepartment(){
 
 };
 
-function updateRoles(){
+async function updateRoles(){
+  
   inquirer
   .prompt([
     {
       name: "selectEmployee",
       type: "list",
       message: "Enter the employee you'd like to update",
-      choices : [] 
+      choices : [...(await getManager())] 
 
     },
 
@@ -129,10 +126,19 @@ function updateRoles(){
       name: "newRole",
       type: "list",
       message: "Enter their new role",
-      choices : [] 
+      choices : [...(await getRoles())] 
     }
-  ])
+  ]).then((ans)=>{
+    connection.query("INSERT INTO employee (title) VALUES (?)",[ans.newRole],function(err,res){
+      if (err) throw err;
+
+      console.table(res);
+      start();
+    })
+  })
 };
+
+
 function getRoles(){
   let query = "SELECT * FROM role";
   var roleList = [ ];
@@ -151,6 +157,7 @@ function getRoles(){
     return response;
   })
 }
+
 function getManager(){
   let query = "SELECT * FROM employee";
   var managerList = [ ];
@@ -181,24 +188,20 @@ function mapRole(role){
   }).then((response) => {
     return response;
   })
-  }
-
-function storeEmployee(){
-  let query = "INSERT INTO employee (first_name, last_name) ";
-  var managerList = [ ];
-
+}
+function mapManager(manager){
+  let query = "SELECT id FROM employee WHERE title = ?";
   return new Promise((resolve, reject) => {
-    connection.query(query, function(err,res){
+    connection.query(query, [manager], function(err,res){
+      if (err) throw err;
+
       resolve(res);
     });
   }).then((response) => {
     return response;
   })
-
 }
-
-
-async function addEmployee(cb){
+async function addEmployee(){
   //employee firstname, lastname, role, manager then run the start funciton again
   let answer = {};
 
@@ -250,6 +253,11 @@ async function addEmployee(cb){
     answer.employeeManager = ans.employeeManager;
   })
   console.log(answer);
+
+  connection.query("INSERT INTO employee (first_name, last_name, role_id) VALUES (?, ?, ?)",[answer.employeeFirstName, answer.employeeLastName, answer.employeeRole], (cb) =>{
+    start();
+  });
+
 };
 
 

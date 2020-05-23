@@ -26,6 +26,4 @@ CREATE TABLE employee (
   last_name VARCHAR(60) ,
   role_id INTEGER ,
   manager_id INTEGER
-
-    
 );
