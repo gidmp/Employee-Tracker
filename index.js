@@ -59,7 +59,7 @@ function start() {
           break;
 
         case "add employees":
-          addEmployee();
+          addEmployee(function(){start()});
           break;
 
         case "add roles":
@@ -80,36 +80,17 @@ function start() {
 
 };
 
-async function getRoles(){
-    let query = "SELECT title FROM role";
-    let roleList = [ ];
-
-    const data = await connection.query(query);
-    // for (var i = 0; i < data.length; i++) {
-    //     roleList.push(data[i].title);
-    // }
-    
-    // console.log(data.length);
-    for(const row of data) {
-        roleList.push(row.title);
-    }
-
-
-    return roleList;
-}
 
 
 //view all employees and their information
 function viewEmployee(){ 
-    let query = "SELECT * FROM employee";
+    let query = "SELECT employee.id, employee.first_name, employee.last_name FROM employee LEFT JOIN role on (role_id = role.department_id)";
 
     connection.query(query, function(err, res) {
       if (err) throw err;
       console.table(res);
       start();
     });
-
-    
 
 };
 
@@ -134,61 +115,189 @@ function viewDepartment(){
 };
 
 function updateRoles(){
-    let query = "SELECT * FROM employee";
-    let employeeList = [];
+  inquirer
+  .prompt([
+    {
+      name: "selectEmployee",
+      type: "list",
+      message: "Enter the employee you'd like to update",
+      choices : [] 
 
+    },
+
+    {
+      name: "newRole",
+      type: "list",
+      message: "Enter their new role",
+      choices : [] 
+    }
+  ])
+};
+function getRoles(){
+  let query = "SELECT * FROM role";
+  var roleList = [ ];
+
+  return new Promise((resolve, reject) => {
     connection.query(query, function(err,res){
-        if (err) throw err;
+      if (err) throw err;
 
-        for (var i = 0; i < res.length; i++) {
-            employeeList.push(employee[i].first_name + " " + employee[i].last_name);
-        }
+      for (var i = 0; i < res.length; i++) {
+          roleList.push(res[i].title);
+      }
+      // cb(roleList);
+      resolve(roleList);
     });
+  }).then((response) => {
+    return response;
+  })
+}
+function getManager(){
+  let query = "SELECT * FROM employee";
+  var managerList = [ ];
 
-    return employeeList;
+  return new Promise((resolve, reject) => {
+    connection.query(query, function(err,res){
+      if (err) throw err;
 
+      for (var i = 0; i < res.length; i++) {
+          managerList.push(res[i].first_name + " "+ res[i].last_name);
+      }
+      resolve(managerList);
+    });
+  }).then((response) => {
+    return response;
+  })
+
+}
+
+function mapRole(role){
+  let query = "SELECT id FROM role WHERE title = ?";
+  return new Promise((resolve, reject) => {
+    connection.query(query, [role], function(err,res){
+      if (err) throw err;
+
+      resolve(res);
+    });
+  }).then((response) => {
+    return response;
+  })
+  }
+
+function storeEmployee(){
+  let query = "INSERT INTO employee (first_name, last_name) ";
+  var managerList = [ ];
+
+  return new Promise((resolve, reject) => {
+    connection.query(query, function(err,res){
+      resolve(res);
+    });
+  }).then((response) => {
+    return response;
+  })
+
+}
+
+
+async function addEmployee(cb){
+  //employee firstname, lastname, role, manager then run the start funciton again
+  let answer = {};
+
+
+  await inquirer.prompt([
+    {
+      name: "employeeFirstName",
+      type: "input",
+      message: "enter employee first name ",
+    },
+  ]).then(function(ans){
+    answer.employeeFirstName = ans.employeeFirstName;
+  });
+
+  
+  await inquirer.prompt([
+    {
+      name: "employeeLastName",
+      type: "input",
+      message: "enter employee last name ",
+    },
+  ]).then(function(ans){
+    answer.employeeLastName = ans.employeeLastName;
+  });
+
+  
+  const role = await inquirer.prompt([
+    {
+      name: "employeeRole",
+      type: "list",
+      message: "enter employee's role'",
+      choices : [...(await getRoles())] //employee's role from database
+    }
+
+  ]).then(function(ans){
+    return ans.employeeRole;
+  });
+  
+  answer.employeeRole = await mapRole(role).then((res)=> res[0].id);
+
+  await inquirer.prompt([
+    {
+      name: "employeeManager",
+      type: "list",
+      message: "enter employee's manager ",
+      choices : [...(await getManager())] //manager's name from database
+    }
+  ]).then((ans) => {
+    answer.employeeManager = ans.employeeManager;
+  })
+  console.log(answer);
 };
 
-async function addEmployee(){
-    //employee firstname, lastname, role, manager then run the start funciton again
-
-    const roles = await getRoles();
-    inquirer
-    .prompt([
-      {
-        name: "employeeFirstName",
-        type: "input",
-        message: "enter employee first name ",
-      },
-      {
-        name: "employeeLastName",
-        type: "input",
-        message: "enter employee last name ",
-      },
-      {
-        name: "employeeRole",
-        type: "list",
-        message: "enter employee's role'",
-        choices : [...roles] //employee's role from database
-      },
-        {
-        name: "employeeManager",
-        type: "list",
-        message: "enter employee's manager ",
-        choices : [] //manager's name from database
-        }
-
-
-    ]).then(function(answer){
-
-    });
-
-};
 
 function addRoles(){
+  inquirer
+    .prompt([
+      {
+        name: "roleName",
+        type: "input",
+        message: "Enter the name of the role"
+      },
+      {
+        name: "salary",
+        type: "input",
+        message: "Enter the salary for this role"
+      },
+      {
+        name: "departmentID",
+        type: "input",
+        message: "Enter department id number"
+      }
+    ])
+    .then(function(answer) {
+      connection.query("INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)",[answer.roleName, answer.salary, answer.departmentID],function(err,res){
+        if (err) throw err;
+
+        console.table(res);
+        start();
+      })
+    })
 
 };
 
 function addDepartment(){
+  inquirer
+    .prompt([
+      {
+        name: "departmentName",
+        type: "input",
+        message: "What is the name of the new department?"
+      }
+    ]).then(function(answer){
+      connection.query("INSERT INTO department (name) VALUES (?)", [answer.departmentName] , function(err, res) {
+        if (err) throw err;
 
+        console.table(res);
+        start();
+      })
+    })
 };
+
