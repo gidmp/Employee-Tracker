@@ -2,17 +2,16 @@ const mysql = require("mysql");
 const inquirer = require("inquirer");
 const cTable = require("console.table");
 const Database = require("./async");
+require("dotenv").config();
 
 // create the connection information for the sql database
 var connection = mysql.createConnection({
-    host: "localhost",
-    port: 3306,
-    // Your username
-    user: "root",
-    // Your password
-    password: "password",
-    database: "employeeDB"
-  });
+  host: process.env.MYSQL_HOST,
+  port: process.env.MYSQL_PORT,
+  user: process.env.MYSQL_USER,
+  password: process.env.MYSQL_PASSWORD,
+  database: "employeeDB"
+});
 
 connection.connect(function(err) {
     if (err) throw err;
@@ -252,7 +251,6 @@ async function addEmployee(){
   ]).then((ans) => {
     answer.employeeManager = ans.employeeManager;
   })
-  console.log(answer);
 
   connection.query("INSERT INTO employee (first_name, last_name, role_id) VALUES (?, ?, ?)",[answer.employeeFirstName, answer.employeeLastName, answer.employeeRole], (cb) =>{
     start();
